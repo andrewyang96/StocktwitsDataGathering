@@ -1,5 +1,8 @@
+#!/usr/bin/python
+
 import urllib2
 import json
+import datetime
 
 FILENAME = "stocktwits.json" # change as necessary
 
@@ -38,6 +41,19 @@ def append(original, msgs):
                     original[ticker].append(msg)
     return original
 
+def cull(original, age_limit=26):
+    # cull all tweets over age_limit days old
+    print "Culling tweets that are more than", age_limit, "days old"
+    threshold = datetime.datetime.now() - datetime.timedelta(age_limit)
+    result = {}
+    for ticker in original.keys():
+        result[ticker] = []
+        for msg in original[ticker]:
+            dt = datetime.datetime.strptime(msg["created_at"], "%Y-%m-%dT%H:%M:%SZ")
+            if dt >= threshold:
+                result[ticker].append(msg)
+    return result
+
 def read_from_file(filename):
     with open(filename, 'r') as f:
         return json.load(f)
@@ -51,4 +67,5 @@ if __name__ == "__main__":
     old = read_from_file(FILENAME)
     new = get_tweets_list(names)
     new = append(old, new)
+    new = cull(new)
     write_to_file(FILENAME, new)
